@@ -1,3 +1,5 @@
+// +build all community
+
 package gokong
 
 import (
@@ -23,6 +25,7 @@ func Test_SnisCreate(t *testing.T) {
 	snisRequest := &SnisRequest{
 		Name:          "example.com",
 		CertificateId: ToId(*certificate.Id),
+		Tags:          []*string{String("my-tag")},
 	}
 
 	result, err := client.Snis().Create(snisRequest)
@@ -31,6 +34,7 @@ func Test_SnisCreate(t *testing.T) {
 	assert.NotNil(t, result)
 	assert.Equal(t, snisRequest.Name, result.Name)
 	assert.Equal(t, IdToString(snisRequest.CertificateId), IdToString(result.CertificateId))
+	assert.Equal(t, snisRequest.Tags, result.Tags)
 
 	err = client.Snis().DeleteByName(result.Name)
 	assert.Nil(t, err)

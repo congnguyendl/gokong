@@ -14,5 +14,6 @@
 -.glide/
 .idea
 
-go.mod
-go.sum
+# VIM swap files
+*.swp
+*.swo

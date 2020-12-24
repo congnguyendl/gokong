@@ -5,7 +5,18 @@ import (
 	"fmt"
 )
 
-type UpstreamClient struct {
+type UpstreamClient interface {
+	GetByName(name string) (*Upstream, error)
+	GetById(id string) (*Upstream, error)
+	Create(upstreamRequest *UpstreamRequest) (*Upstream, error)
+	DeleteByName(name string) error
+	DeleteById(id string) error
+	List() (*Upstreams, error)
+	UpdateByName(name string, upstreamRequest *UpstreamRequest) (*Upstream, error)
+	UpdateById(id string, upstreamRequest *UpstreamRequest) (*Upstream, error)
+}
+
+type upstreamClient struct {
 	config *Config
 }
 
@@ -19,6 +30,7 @@ type UpstreamRequest struct {
 	HashOnCookie       string               `json:"hash_on_cookie,omitempty" yaml:"hash_on_cookie,omitempty"`
 	HashOnCookiePath   string               `json:"hash_on_cookie_path,omitempty" yaml:"hash_on_cookie_path,omitempty"`
 	HealthChecks       *UpstreamHealthCheck `json:"healthchecks,omitempty" yaml:"healthchecks,omitempty"`
+	Tags               []*string            `json:"tags,omitempty" yaml:"tags,omitempty"`
 }
 
 type UpstreamHealthCheck struct {
@@ -53,8 +65,8 @@ type ActiveUnhealthy struct {
 
 type UpstreamHealthCheckPassive struct {
 	Type      string            `json:"type,omitempty" yaml:"type,omitempty"`
-	Healthy   *PassiveHealthy   `json:"healthy,omitempty" yaml:"healthy,omitempty"`
-	Unhealthy *PassiveUnhealthy `json:"unhealthy,omitempty" yaml:"unhealthy,omitempty"`
+	Healthy   *PassiveHealthy   `json:"healthy,omitempty yaml:"healthy,omitempty"`
+	Unhealthy *PassiveUnhealthy `json:"unhealthy,omitempty yaml:"unhealthy,omitempty"`
 }
 
 type PassiveHealthy struct {
@@ -72,6 +84,7 @@ type PassiveUnhealthy struct {
 type Upstream struct {
 	Id string `json:"id,omitempty" yaml:"id,omitempty"`
 	UpstreamRequest
+	Tags []*string `json:"tags,omitempty" yaml:"tags,omitempty"`
 }
 
 type Upstreams struct {
@@ -81,13 +94,12 @@ type Upstreams struct {
 
 const UpstreamsPath = "/upstreams/"
 
-func (upstreamClient *UpstreamClient) GetByName(name string) (*Upstream, error) {
+func (upstreamClient *upstreamClient) GetByName(name string) (*Upstream, error) {
 	return upstreamClient.GetById(name)
 }
 
-func (upstreamClient *UpstreamClient) GetById(id string) (*Upstream, error) {
-
-	r, body, errs := newGet(upstreamClient.config, upstreamClient.config.HostAddress+UpstreamsPath+id).End()
+func (upstreamClient *upstreamClient) GetById(id string) (*Upstream, error) {
+	r, body, errs := newGet(upstreamClient.config, UpstreamsPath+id).End()
 	if errs != nil {
 		return nil, fmt.Errorf("could not get upstream, error: %v", errs)
 	}
@@ -109,9 +121,8 @@ func (upstreamClient *UpstreamClient) GetById(id string) (*Upstream, error) {
 	return upstream, nil
 }
 
-func (upstreamClient *UpstreamClient) Create(upstreamRequest *UpstreamRequest) (*Upstream, error) {
-
-	r, body, errs := newPost(upstreamClient.config, upstreamClient.config.HostAddress+UpstreamsPath).Send(upstreamRequest).End()
+func (upstreamClient *upstreamClient) Create(upstreamRequest *UpstreamRequest) (*Upstream, error) {
+	r, body, errs := newPost(upstreamClient.config, UpstreamsPath).Send(upstreamRequest).End()
 	if errs != nil {
 		return nil, fmt.Errorf("could not create new upstream, error: %v", errs)
 	}
@@ -133,13 +144,12 @@ func (upstreamClient *UpstreamClient) Create(upstreamRequest *UpstreamRequest) (
 	return createdUpstream, nil
 }
 
-func (upstreamClient *UpstreamClient) DeleteByName(name string) error {
+func (upstreamClient *upstreamClient) DeleteByName(name string) error {
 	return upstreamClient.DeleteById(name)
 }
 
-func (upstreamClient *UpstreamClient) DeleteById(id string) error {
-
-	r, body, errs := newDelete(upstreamClient.config, upstreamClient.config.HostAddress+UpstreamsPath+id).End()
+func (upstreamClient *upstreamClient) DeleteById(id string) error {
+	r, body, errs := newDelete(upstreamClient.config, UpstreamsPath+id).End()
 	if errs != nil {
 		return fmt.Errorf("could not delete upstream, result: %v error: %v", r, errs)
 	}
@@ -151,9 +161,8 @@ func (upstreamClient *UpstreamClient) DeleteById(id string) error {
 	return nil
 }
 
-func (upstreamClient *UpstreamClient) List() (*Upstreams, error) {
-
-	r, body, errs := newGet(upstreamClient.config, upstreamClient.config.HostAddress+UpstreamsPath).End()
+func (upstreamClient *upstreamClient) List() (*Upstreams, error) {
+	r, body, errs := newGet(upstreamClient.config, UpstreamsPath).End()
 	if errs != nil {
 		return nil, fmt.Errorf("could not get upstreams, error: %v", errs)
 	}
@@ -171,13 +180,12 @@ func (upstreamClient *UpstreamClient) List() (*Upstreams, error) {
 	return upstreams, nil
 }
 
-func (upstreamClient *UpstreamClient) UpdateByName(name string, upstreamRequest *UpstreamRequest) (*Upstream, error) {
+func (upstreamClient *upstreamClient) UpdateByName(name string, upstreamRequest *UpstreamRequest) (*Upstream, error) {
 	return upstreamClient.UpdateById(name, upstreamRequest)
 }
 
-func (upstreamClient *UpstreamClient) UpdateById(id string, upstreamRequest *UpstreamRequest) (*Upstream, error) {
-
-	r, body, errs := newPatch(upstreamClient.config, upstreamClient.config.HostAddress+UpstreamsPath+id).Send(upstreamRequest).End()
+func (upstreamClient *upstreamClient) UpdateById(id string, upstreamRequest *UpstreamRequest) (*Upstream, error) {
+	r, body, errs := newPatch(upstreamClient.config, UpstreamsPath+id).Send(upstreamRequest).End()
 	if errs != nil {
 		return nil, fmt.Errorf("could not update upstream, error: %v", errs)
 	}

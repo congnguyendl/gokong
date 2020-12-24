@@ -1,3 +1,5 @@
+// +build all community
+
 package gokong
 
 import (
@@ -14,6 +16,7 @@ func TestServiceClient_GetServiceById(t *testing.T) {
 		Protocol: String("http"),
 		Host:     String("foo.com"),
 		Port:     Int(8080),
+		Tags:     []*string{String("my-tag")},
 	}
 
 	client := NewClient(NewDefaultConfig())
@@ -26,6 +29,7 @@ func TestServiceClient_GetServiceById(t *testing.T) {
 	assert.EqualValues(t, createdService.Protocol, serviceRequest.Protocol)
 	assert.EqualValues(t, createdService.Host, serviceRequest.Host)
 	assert.EqualValues(t, createdService.Port, serviceRequest.Port)
+	assert.EqualValues(t, createdService.Tags, serviceRequest.Tags)
 
 	result, err := client.Services().GetServiceById(*createdService.Id)
 
@@ -67,6 +71,42 @@ func TestServiceClient_GetServices(t *testing.T) {
 	}
 }
 
+func TestServiceClient_DeleteServiceByIdWithRouteError(t *testing.T) {
+	serviceRequest := &ServiceRequest{
+		Protocol: String("http"),
+		Host:     String("foo.com"),
+	}
+	client := NewClient(NewDefaultConfig())
+
+	serviceRequest.Name = String(fmt.Sprintf("service-name-%s", uuid.NewV4().String()))
+	createdService, err := client.Services().Create(serviceRequest)
+	assert.Nil(t, err)
+	assert.NotNil(t, createdService)
+
+	routeRequest := &RouteRequest{
+		Protocols:    StringSlice([]string{"http"}),
+		Methods:      StringSlice([]string{"GET"}),
+		Hosts:        StringSlice([]string{"foo.com"}),
+		Paths:        StringSlice([]string{"/bar"}),
+		StripPath:    Bool(true),
+		PreserveHost: Bool(true),
+		Service:      ToId(*createdService.Id),
+	}
+	createdRoute, err := client.Routes().Create(routeRequest)
+	assert.Nil(t, err)
+
+	err = client.Services().DeleteServiceById(*createdService.Id)
+	expectedError := "bad request, message from kong: {\"message\":\"an existing 'routes' entity references this 'services' entity\",\"name\":\"foreign key violation\",\"fields\":{\"@referenced_by\":\"routes\"},\"code\":4}"
+	assert.Equal(t, expectedError, err.Error())
+	assert.NotNil(t, createdRoute)
+
+	err = client.Routes().DeleteById(*createdRoute.Id)
+	assert.Nil(t, err)
+
+	err = client.Services().DeleteServiceById(*createdService.Id)
+	assert.Nil(t, err)
+}
+
 func TestServiceClient_UpdateServiceById(t *testing.T) {
 	serviceRequest := &ServiceRequest{
 		Name:     String(fmt.Sprintf("service-name-%s", uuid.NewV4().String())),
@@ -94,7 +134,6 @@ func TestServiceClient_UpdateServiceById(t *testing.T) {
 }
 
 func Test_ServicesGetNonExistentById(t *testing.T) {
-
 	service, err := NewClient(NewDefaultConfig()).Services().GetServiceById(uuid.NewV4().String())
 
 	assert.Nil(t, service)
@@ -102,7 +141,6 @@ func Test_ServicesGetNonExistentById(t *testing.T) {
 }
 
 func Test_ServicesGetNonExistentByName(t *testing.T) {
-
 	service, err := NewClient(NewDefaultConfig()).Services().GetServiceByName(uuid.NewV4().String())
 
 	assert.Nil(t, service)
@@ -110,7 +148,6 @@ func Test_ServicesGetNonExistentByName(t *testing.T) {
 }
 
 func Test_AllServiceEndpointsShouldReturnErrorWhenRequestUnauthorised(t *testing.T) {
-
 	unauthorisedClient := NewClient(&Config{HostAddress: kong401Server})
 
 	s, err := unauthorisedClient.Services().GetServiceByName("foo")
@@ -149,4 +186,42 @@ func Test_AllServiceEndpointsShouldReturnErrorWhenRequestUnauthorised(t *testing
 	assert.Nil(t, updatedService)
 	assert.NotNil(t, err)
 
+}
+
+func Test_CreateShouldRerturnErrorWhenBadRequest(t *testing.T) {
+	serviceRequest := &ServiceRequest{
+		Name:     String("service-name" + uuid.NewV4().String()),
+		Protocol: String("http"),
+	}
+
+	client := NewClient(NewDefaultConfig())
+	createdService, err := client.Services().Create(serviceRequest)
+	assert.Nil(t, createdService)
+	assert.Contains(t, err.Error(), "bad request, message from kong")
+	assert.Contains(t, err.Error(), "schema violation (host: required field missing)")
+}
+
+func Test_UpdateShouldRerturnErrorWhenBadRequest(t *testing.T) {
+	serviceRequest := &ServiceRequest{
+		Name:     String("service-name" + uuid.NewV4().String()),
+		Host:     String("foo.com"),
+		Protocol: String("http"),
+	}
+
+	client := NewClient(NewDefaultConfig())
+	createdService, err := client.Services().Create(serviceRequest)
+	assert.Nil(t, err)
+
+	serviceRequestUpdate := &ServiceRequest{
+		Name:     createdService.Name,
+		Host:     createdService.Host,
+		Protocol: String("foo"),
+	}
+	updatedService, err := client.Services().UpdateServiceById(*createdService.Id, serviceRequestUpdate)
+	assert.Nil(t, updatedService)
+	assert.Contains(t, err.Error(), "bad request, message from kong")
+	assert.Contains(t, err.Error(), "schema violation (protocol: expected one of:")
+
+	err = client.Services().DeleteServiceById(*createdService.Id)
+	assert.Nil(t, err)
 }
