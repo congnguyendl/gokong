@@ -1,4 +1,4 @@
-module github.com/kevholditch/gokong
+module github.com/congnguyendl/gokong
 
 go 1.15
 
@@ -24,8 +24,9 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	github.com/sirupsen/logrus v1.4.2 // indirect
 	github.com/smartystreets/goconvey v1.6.4 // indirect
-	github.com/stretchr/testify v1.4.0
+	github.com/stretchr/testify v1.2.2
 	golang.org/x/net v0.0.0-20191112182307-2180aed22343 // indirect
+	gopkg.in/yaml.v2 v2.4.0
 	gotest.tools v2.2.0+incompatible // indirect
 	moul.io/http2curl v1.0.0 // indirect
 )
