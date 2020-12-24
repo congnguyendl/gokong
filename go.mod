@@ -1,4 +1,4 @@
-module github.com/congnguyendl/gokong/v6
+module github.com/congnguyendl/gokong
 
 go 1.15
 
