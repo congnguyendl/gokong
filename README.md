@@ -1,8 +1,11 @@
 [![Build Status](https://travis-ci.org/kevholditch/gokong.svg?branch=master)](https://travis-ci.org/kevholditch/gokong)
 
-GoKong
+GoKong.
 ======
-A kong go client fully tested with no mocks!!
+A kong go client fully tested with no mocks !!.
+``
+ver 2
+``
 
 ## IMPORTANT
 GoKong has now been updated to support kong v1.0.0.  This is a breaking change release is not compatible with any versions <1.0.0.
