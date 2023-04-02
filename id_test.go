@@ -2,11 +2,8 @@ package gokong
 
 import (
 	"encoding/json"
-	"testing"
-
-	"gopkg.in/yaml.v2"
-
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 type Metal struct {

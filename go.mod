@@ -10,7 +10,6 @@ require (
 	github.com/phayes/freeport v0.0.0-20180830031419-95f893ade6f2
 	github.com/satori/go.uuid v1.2.0
 	github.com/stretchr/testify v1.6.1
-	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (

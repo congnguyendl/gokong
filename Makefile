@@ -3,6 +3,11 @@
 TEST?=$$(go list ./... |grep -v 'vendor')
 GOFMT_FILES?=$$(find . -name '*.go' |grep -v vendor)
 
+ver = 6.0.0
+
+update:
+	git add . && git commit -m "update: sdk v$(ver)" && git tag -a v$(ver) -m "update: sdk v$(ver)" && git push origin master --tags
+
 default: build test
 
 build: fmtcheck errcheck vet
