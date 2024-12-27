@@ -3,7 +3,7 @@
 TEST?=$$(go list ./... |grep -v 'vendor')
 GOFMT_FILES?=$$(find . -name '*.go' |grep -v vendor)
 
-ver ?= 6.0.2
+ver ?= 6.0.3
 
 update:
 	@if git rev-parse v$(ver) >/dev/null 2>&1; then \
