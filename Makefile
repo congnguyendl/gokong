@@ -3,10 +3,19 @@
 TEST?=$$(go list ./... |grep -v 'vendor')
 GOFMT_FILES?=$$(find . -name '*.go' |grep -v vendor)
 
-ver = 6.0.0
+ver ?= 6.0.1
 
 update:
-	git add . && git commit -m "update: sdk v$(ver)" && git tag -a v$(ver) -m "update: sdk v$(ver)" && git push origin master --tags
+	@if git rev-parse v$(ver) >/dev/null 2>&1; then \
+		echo "Tag v$(ver) already exists. Update the version."; \
+		exit 1; \
+	fi
+	@git add .
+	@git commit -m "update: sdk v$(ver)" || echo "No changes to commit"
+	@git tag -a v$(ver) -m "update: sdk v$(ver)"
+	@git push origin master
+	@git push origin --tags
+
 
 default: build test
 

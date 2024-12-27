@@ -3,6 +3,7 @@ package gokong
 import (
 	"encoding/json"
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/yaml.v3"
 	"testing"
 )
 
